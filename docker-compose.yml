@@ -1,0 +1,51 @@
+services:
+  database:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-user_doc_management}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # target: development
+    restart: unless-stopped
+    # env_file:
+    #   - .env
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-user_doc_management}
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret}
+    volumes:
+      # - .:/app
+      # - /app/node_modules
+      - uploads_data:/app/uploads
+    depends_on:
+      - database
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
